@@ -35,7 +35,7 @@
   import outwatch.dom.dsl._
   ```
   
-* Outwatch now takes all its tags, attributes and styles from [scala-dom-types](https://github.com/raquo/scala-dom-types) ([DomTypes.scala](https://github.com/OutWatch/outwatch/blob/6dd72a31cb48bd67547a08482209f0a2480b0e9c/src/main/scala/outwatch/dom/DomTypes.scala)) - Thanks @raquo! Therefore it is now possible to use style-sheets in outwatch, like you may know from [scalatags](https://github.com/lihaoyi/scalatags).
+* Outwatch now takes all its tags, attributes and styles from [scala-dom-types](https://github.com/raquo/scala-dom-types) ([DomTypes.scala](https://github.com/OutWatch/outwatch/blob/6dd72a31cb48bd67547a08482209f0a2480b0e9c/src/main/scala/outwatch/dom/DomTypes.scala)) - Thanks @raquo! Therefore we have a more complete collection of tags/attributes and it is now possible to use style-sheets in outwatch, like you may know from [scalatags](https://github.com/lihaoyi/scalatags).
   ```scala
   div(border := "1px solid black")
   ```
@@ -62,7 +62,21 @@
 
 * Outwatch now exclusively uses [Monix](https://monix.io) instead of [rxscala-js](https://github.com/LukaJCB/rxscala-js). Be sure to provide a [Scheduler](https://monix.io/docs/2x/execution/scheduler.html).
 
-* Managed subscriptions @cornerman @mariusmuja
+* Introducing managed subscriptions. When subscribing to Observables in your code outside of dom-elements, you have to handle the lifetime of subscriptions yourself. With `managed` subscriptions, you can instead bind it to the lifetime of a dom-element:
+  ```scala
+    val handler: Handler[Int] = ???
+    val sink: Sink[Int] = ???
+    div( managed(sink <-- handler) )
+  ```
+
+  or:
+
+  ```scala
+    val observable: Observable[Int] = ???
+    div( managed(IO(observable.foreach(i => println(s"debug: $i")))) )
+  ```
+
+  In both cases, outwatch will only run the `IO[Subscription]` when the element is rendered in the dom and will unsubscribe when the element is removed from the dom.
 
 * `Outwatch.render*` is now explicit whether it replaces or inserts into the given dom element ([OutWatch.scala](https://github.com/OutWatch/outwatch/blob/master/src/main/scala/outwatch/dom/OutWatch.scala)):
   ```scala
@@ -147,7 +161,7 @@
   events.window.onResize.foreach(_ => println("window resized"))
   ```
 
-* Boolean attributes are now proprly handled. Details @cornerman?
+* Boolean and enumerated attributes are now properly handled. Quoting from the [HTML5 spec](https://www.w3.org/TR/html5/infrastructure.html#boolean-attributes): "A number of attributes are boolean attributes. The presence of a boolean attribute on an element represents the true value, and the absence of the attribute represents the false value." Previously, attributes like `draggable` or `disabled` were wrongly rendered. Using scala-dom-types and [a new release of snabbdom](https://github.com/snabbdom/snabbdom/releases/tag/v0.7.0), we now adhere to the HTML spec.
 
 * It is possible to group modifiers with `CompositeModifier`:
   ```scala
